@@ -58,7 +58,7 @@ cd booking-app
 3. Wykonaj:
 
 ```sql
-CREATE DATABASE booking;
+CREATE DATABASE booking_db;
 ```
 
 #### Sprawdź plik konfiguracji
@@ -72,7 +72,7 @@ booking-backend/booking-api/src/main/resources/application.properties
 Upewnij się, że zawiera:
 
 ```
-spring.datasource.url=jdbc:mysql://localhost:3306/booking
+spring.datasource.url=jdbc:mysql://localhost:3306/booking_db
 spring.datasource.username=root
 spring.datasource.password=
 spring.jpa.hibernate.ddl-auto=update
