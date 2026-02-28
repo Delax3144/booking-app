@@ -43,8 +43,8 @@ Zanim rozpoczniesz:
 ### 1. Klonowanie repozytorium
 
 ```bash
-git clone https://github.com/Delax3144/kino-backend.git
-cd kino-backend
+git clone https://github.com/Delax3144/booking-app.git
+cd booking-app
 ```
 
 ---
