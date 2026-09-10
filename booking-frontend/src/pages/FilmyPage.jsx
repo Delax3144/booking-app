@@ -5,7 +5,7 @@ export default function FilmyPage() {
   const [movies, setMovies] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/movies")
+    fetch("/api/movies")
       .then((res) => res.json())
       .then((data) => setMovies(data));
   }, []);
