@@ -1,33 +1,70 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import ReservationPage from "./pages/ReservationPage";
-import MojeRezerwacjePage from "./pages/MojeRezerwacjePage";
-import FilmyPage from "./pages/FilmyPage";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+} from "react-router-dom";
+
 import AdminPanel from "./pages/AdminPanel";
 import AuthPage from "./pages/AuthPage";
+import FilmyPage from "./pages/FilmyPage";
+import HomePage from "./pages/HomePage";
+import MojeRezerwacjePage from "./pages/MojeRezerwacjePage";
+import ReservationPage from "./pages/ReservationPage";
+
 import Header from "./components/Header";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
-  const email = localStorage.getItem("email");
-
   return (
     <Router>
       <Header />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/logowanie" element={<AuthPage />} />
-        <Route path="/rezerwacja/:movieId/:time" element={<ReservationPage />} />
 
-        {email && (
-          <>
-            <Route path="/moje-rezerwacje" element={<MojeRezerwacjePage />} />
-            <Route path="/filmy" element={<FilmyPage />} />
-            {email === "admin@gmail.com" && (
-              <Route path="/admin" element={<AdminPanel />} />
-            )}
-          </>
-        )}
+      <Routes>
+        <Route
+          path="/"
+          element={<HomePage />}
+        />
+
+        <Route
+          path="/logowanie"
+          element={<AuthPage />}
+        />
+
+        <Route
+          path="/filmy"
+          element={
+            <ProtectedRoute>
+              <FilmyPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/rezerwacja/:movieId/:time"
+          element={
+            <ProtectedRoute>
+              <ReservationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/moje-rezerwacje"
+          element={
+            <ProtectedRoute>
+              <MojeRezerwacjePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

@@ -1,62 +1,94 @@
-import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { apiFetch } from "../services/api";
 
 export default function ReservationPage() {
   const { movieId, time } = useParams();
+  const navigate = useNavigate();
+
   const [seats, setSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [occupiedSeats, setOccupiedSeats] = useState([]);
-  const navigate = useNavigate();
-
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/reservations/occupied?movieId=${movieId}&time=${time}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setOccupiedSeats(data);
-      });
+    fetch(
+      `/api/reservations/occupied?movieId=${movieId}&time=${time}`
+    )
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Nie udało się pobrać zajętych miejsc");
+        }
+
+        return res.json();
+      })
+      .then(setOccupiedSeats)
+      .catch(() => setOccupiedSeats([]));
   }, [movieId, time]);
 
   useEffect(() => {
     const totalSeats = 30;
-    const generated = Array.from({ length: totalSeats }, (_, i) => ({
-      id: i + 1,
-      taken: occupiedSeats.includes(i + 1),
-    }));
-    setSeats(generated);
+
+    const generatedSeats = Array.from(
+      { length: totalSeats },
+      (_, index) => {
+        const seatId = index + 1;
+
+        return {
+          id: seatId,
+          taken: occupiedSeats.includes(seatId),
+        };
+      }
+    );
+
+    setSeats(generatedSeats);
   }, [occupiedSeats]);
 
   const toggleSeat = (seatId) => {
-    if (seats.find((s) => s.id === seatId)?.taken) return;
-    setSelectedSeats((prev) =>
-      prev.includes(seatId) ? prev.filter((id) => id !== seatId) : [...prev, seatId]
+    const seat = seats.find((item) => item.id === seatId);
+
+    if (seat?.taken) {
+      return;
+    }
+
+    setSelectedSeats((previousSeats) =>
+      previousSeats.includes(seatId)
+        ? previousSeats.filter((id) => id !== seatId)
+        : [...previousSeats, seatId]
     );
   };
 
-  const handleReservation = () => {
+  const handleReservation = async () => {
+    if (selectedSeats.length === 0) {
+      return;
+    }
+
     const reservation = {
-  movieId: parseInt(movieId),
-  time,
-  seats: selectedSeats,
-  userEmail: localStorage.getItem("email") || "test@example.com",
-};
+      movieId: Number(movieId),
+      time,
+      seats: selectedSeats,
+    };
 
+    try {
+      const response = await apiFetch("/api/reservations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reservation),
+      });
 
-    fetch("http://localhost:8080/api/reservations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(reservation),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        alert("Rezerwacja zapisana!");
-        setSelectedSeats([]);
-        navigate("/moje-rezerwacje");
-      })
-      .catch(() => alert("Błąd podczas rezerwacji."));
+      if (!response.ok) {
+        throw new Error("Nie udało się zapisać rezerwacji");
+      }
+
+      alert("Rezerwacja zapisana!");
+
+      setSelectedSeats([]);
+      navigate("/moje-rezerwacje");
+    } catch {
+      alert("Błąd podczas rezerwacji.");
+    }
   };
 
   return (
@@ -65,6 +97,7 @@ export default function ReservationPage() {
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
           Rezerwacja miejsc
         </h2>
+
         <p className="text-center text-gray-600 mb-6">
           Film ID: {movieId} | Godzina: {time}
         </p>
@@ -75,14 +108,13 @@ export default function ReservationPage() {
               key={seat.id}
               onClick={() => toggleSeat(seat.id)}
               disabled={seat.taken}
-              className={`w-12 h-12 rounded font-medium border 
-                ${
-                  seat.taken
-                    ? "bg-gray-400 text-white cursor-not-allowed"
-                    : selectedSeats.includes(seat.id)
+              className={`w-12 h-12 rounded font-medium border ${
+                seat.taken
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : selectedSeats.includes(seat.id)
                     ? "bg-blue-500 text-white"
                     : "bg-white hover:bg-blue-100"
-                }`}
+              }`}
             >
               {seat.id}
             </button>
@@ -91,15 +123,17 @@ export default function ReservationPage() {
 
         <div className="flex justify-center gap-6 text-sm text-gray-700 mb-6">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border rounded"></div>
+            <div className="w-4 h-4 border rounded" />
             Wolne
           </div>
+
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-500 rounded"></div>
+            <div className="w-4 h-4 bg-blue-500 rounded" />
             Wybrane
           </div>
+
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-400 rounded"></div>
+            <div className="w-4 h-4 bg-gray-400 rounded" />
             Zajęte
           </div>
         </div>
@@ -110,7 +144,9 @@ export default function ReservationPage() {
             disabled={selectedSeats.length === 0}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
           >
-            Zarezerwuj {selectedSeats.length > 0 && `(${selectedSeats.length})`}
+            Zarezerwuj{" "}
+            {selectedSeats.length > 0 &&
+              `(${selectedSeats.length})`}
           </button>
         </div>
       </div>

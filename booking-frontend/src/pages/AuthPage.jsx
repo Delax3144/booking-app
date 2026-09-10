@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+import { saveAuth } from "../utils/auth";
+
 export default function AuthPage({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -34,13 +36,14 @@ export default function AuthPage({ onLogin }) {
 
   const handleSubmit = async () => {
   setMessage(null);
+
   try {
-    if (isLogin) {
-      await login(email, password);
-    } else {
-      await register(email, password);
-    }
-    localStorage.setItem("email", email);
+    const authData = isLogin
+      ? await login(email, password)
+      : await register(email, password);
+
+    saveAuth(authData);
+
     window.location.href = "/";
   } catch (error) {
     setMessage(error.message || "Coś poszło nie tak");
