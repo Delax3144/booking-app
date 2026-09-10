@@ -2,7 +2,9 @@ package com.booking.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +22,8 @@ import com.booking.repository.MovieRepository;
 @CrossOrigin(origins = "*")
 public class MovieController {
 
+    private static final String ADMIN_EMAIL = "admin@gmail.com";
+
     private final MovieRepository movieRepository;
 
     public MovieController(MovieRepository movieRepository) {
@@ -32,13 +36,41 @@ public class MovieController {
     }
 
     @PostMapping
-    public Movie addMovie(@RequestBody Movie movie) {
-        return movieRepository.save(movie);
+    public ResponseEntity<?> addMovie(
+            @RequestBody Movie movie,
+            Authentication authentication
+    ) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Brak uprawnień administratora");
+        }
+
+        Movie savedMovie = movieRepository.save(movie);
+
+        return ResponseEntity.ok(savedMovie);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMovie(@PathVariable Long id) {
+    public ResponseEntity<?> deleteMovie(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Brak uprawnień administratora");
+        }
+
+        if (!movieRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
         movieRepository.deleteById(id);
+
         return ResponseEntity.noContent().build();
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null
+                && ADMIN_EMAIL.equalsIgnoreCase(authentication.getName());
     }
 }
